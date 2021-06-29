@@ -43,9 +43,12 @@ publishing {
             url = uri("https://maven.pkg.github.com/autught/recycleradapter")
             credentials {
                 //Fetch these details from the properties file or from Environment variables
-                def config = new ConfigSlurper().parse(new File("github.properties").toURI().toURL())
-                username = config.gpr.usr
-                password = config.gpr.key
+                Properties properties = new Properties()
+                properties.load(new FileInputStream("publish.properties"))
+                username = properties.getProperty("userId")
+                password = properties.getProperty("token")
+                println("user:"+username)
+                println("psw:"+password)
             }
         }
     }
