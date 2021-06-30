@@ -47,9 +47,19 @@ publishing {
                 properties.load(new FileInputStream("publish.properties"))
                 username = properties.getProperty("userId")
                 password = properties.getProperty("token")
-                println("user:"+username)
-                println("psw:"+password)
+                println("user:" + username)
+                println("psw:" + password)
             }
         }
     }
+    publications {
+        release(MavenPublication) {
+            groupId = "com.recyclerview"
+            artifactId = "recycler-adapter"
+            version = "1.0.0"
+            /**第一次先运行gradle build 生成arr文件后在运行gradle publish*/
+//            artifact("$buildDir/outputs/aar/adapter-release.aar")
+        }
+    }
 }
+
