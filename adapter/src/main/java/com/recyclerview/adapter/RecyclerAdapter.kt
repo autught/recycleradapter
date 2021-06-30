@@ -14,10 +14,10 @@ import java.lang.ref.WeakReference
  * @author:  79120
  * @date :   2021/6/21 15:49
  */
-abstract class RecyclerAdapter<T : Any, VH : RecyclerView.ViewHolder> : RecyclerView.Adapter<VH>() {
+open class RecyclerAdapter<T : Any> : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     private var itemType: ((T) -> Int)? = null
     private var weakInflater: WeakReference<LayoutInflater>? = null
-    private val models = SparseArrayCompat<IRecyclerController<T, VH>>()
+    private val models = SparseArrayCompat<IRecyclerController<T, in RecyclerView.ViewHolder>>()
     private val updateCallback by lazy { AdapterListUpdateCallback(this) }
     private var recycler: IRecyclerModel<T> = CollectionsModel(updateCallback)
 
@@ -29,25 +29,26 @@ abstract class RecyclerAdapter<T : Any, VH : RecyclerView.ViewHolder> : Recycler
         this.itemType = block
     }
 
-    fun <C : IRecyclerController<T, VH>> addControllers(type: Int, c: C) {
-        models.takeIf { !it.containsKey(type) }?.put(type, c)
+    @Suppress("UNCHECKED_CAST")
+    fun <VH:RecyclerView.ViewHolder> addControllers(type: Int, c: IRecyclerController<T, VH>) {
+        models.takeIf { !it.containsKey(type) }?.put(type, c as IRecyclerController<T, RecyclerView.ViewHolder>)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         require(!models.isEmpty)
         val inflater = weakInflater?.get() ?: LayoutInflater.from(parent.context)
         val model = models[viewType]
         return model!!.onCreate(parent, inflater)
     }
 
-    override fun onBindViewHolder(holder: VH, position: Int) {
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val type = getItemViewType(position)
         require(models.containsKey(type))
         val data = requireNotNull(getItem(position))
         models[type]?.onBind(data, holder)
     }
 
-    override fun onBindViewHolder(holder: VH, position: Int, payloads: MutableList<Any>) {
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int, payloads: MutableList<Any>) {
         if (payloads.isEmpty()) {
             super.onBindViewHolder(holder, position, payloads)
         } else {
