@@ -26,8 +26,13 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
     kotlinOptions {
         jvmTarget = '1.8'
+    }
+
+    buildFeatures {
+        viewBinding = true
     }
 }
 
@@ -56,7 +61,7 @@ publishing {
         release(MavenPublication) {
             groupId = "com.recyclerview"
             artifactId = "recycler-adapter"
-            version = "1.1.1"
+            version = "1.1.7"
             /**第一次先运行gradle build 生成arr文件后在运行gradle publish*/
             artifact("$buildDir/outputs/aar/adapter-release.aar")
         }

@@ -7,12 +7,14 @@ import androidx.recyclerview.widget.RecyclerView
 /**
  * @description:
  * @author:  79120
- * @date :   2021/6/23 17:50
+ * @date :   2021/7/9 11:25
  */
 interface IRecyclerController<T : Any, VH : RecyclerView.ViewHolder> {
-    fun onCreate(parent: ViewGroup, inflater: LayoutInflater): RecyclerView.ViewHolder
 
-    fun onBind(data: T, holder: VH)
+    fun create(inflater: LayoutInflater, parent: ViewGroup, type: Int): VH
 
-    fun onBindPayloads(data: T, holder: VH): Unit?=null
+    fun bind(data: T, holder: VH, position: Int)
+
+    fun bindPayloads(data: T, holder: VH, position: Int): Unit? = null
+
 }
