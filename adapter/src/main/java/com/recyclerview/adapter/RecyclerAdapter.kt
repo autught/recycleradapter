@@ -19,6 +19,8 @@ abstract class RecyclerAdapter<T : Any, VH : RecyclerView.ViewHolder> : Recycler
     private var weakInflater: WeakReference<LayoutInflater>? = null
     private val updateCallback by lazy { AdapterListUpdateCallback(this) }
     private var recycler: IRecyclerModel<T> = CollectionsModel(updateCallback)
+    private var clickBlock: ((T, Int) -> Unit)? = null
+    private var clickLongBlock: ((T, Int) -> Unit)? = null
 
     fun <M : IRecyclerModel<T>> setRecyclerModel(block: ((ListUpdateCallback) -> M)) {
         this.recycler = block.invoke(updateCallback)
@@ -26,7 +28,7 @@ abstract class RecyclerAdapter<T : Any, VH : RecyclerView.ViewHolder> : Recycler
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
         val inflater = weakInflater?.get() ?: LayoutInflater.from(parent.context)
-        return create(inflater, parent, viewType)
+        return create(inflater, parent, viewType).also { handleClickEvent(it) }
     }
 
     override fun onBindViewHolder(holder: VH, position: Int) {
@@ -50,10 +52,54 @@ abstract class RecyclerAdapter<T : Any, VH : RecyclerView.ViewHolder> : Recycler
     }
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
-        weakInflater = WeakReference(LayoutInflater.from(recyclerView.context))
+        this.weakInflater = WeakReference(LayoutInflater.from(recyclerView.context))
     }
 
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
-        weakInflater = null
+        this.weakInflater = null
+    }
+
+    private fun handleClickEvent(holder: VH) {
+        clickBlock?.let {
+            holder.itemView.setOnClickListener {
+                val position = holder.absoluteAdapterPosition
+                val data = if (position > 0) getItem(position) else null
+                data?.let { clickBlock!!.invoke(data, position) }
+            }
+        }
+        clickLongBlock?.let {
+            holder.itemView.setOnLongClickListener {
+                val position = holder.absoluteAdapterPosition
+                val data = if (position > 0) getItem(position) else null
+                data?.let { clickLongBlock!!.invoke(data, position) }
+                return@setOnLongClickListener true
+            }
+        }
+    }
+
+    fun setOnItemClickListener(click: ((T, Int) -> Unit)) {
+        this.clickBlock = click
+    }
+
+    fun setOnItemLongClickListener(click: ((T, Int) -> Unit)) {
+        this.clickLongBlock = click
+    }
+
+    companion object {
+        fun <T : Any, VH : RecyclerView.ViewHolder> create(controller: IRecyclerController<T, VH>) =
+            object : RecyclerAdapter<T, VH>() {
+                override fun create(
+                    inflater: LayoutInflater,
+                    parent: ViewGroup,
+                    type: Int
+                ) = controller.create(inflater, parent, type)
+
+                override fun bind(data: T, holder: VH, position: Int) {
+                    controller.bind(data, holder, position)
+                }
+
+                override fun bindPayloads(data: T, holder: VH, position: Int) =
+                    controller.bindPayloads(data, holder, position)
+            }
     }
 }

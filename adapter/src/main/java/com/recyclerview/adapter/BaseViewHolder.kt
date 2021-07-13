@@ -27,7 +27,8 @@ class BaseViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         }
         return view as T
     }
+
 }
 
-class ViewBindingHolder<VB : ViewBinding>(val binding: VB) :
+class ViewBindingHolder<VB : ViewBinding>(protected val binding: VB) :
     RecyclerView.ViewHolder(binding.root)
