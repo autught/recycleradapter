@@ -19,8 +19,7 @@ abstract class RecyclerAdapter<T : Any, VH : RecyclerView.ViewHolder> : Recycler
     private var weakInflater: WeakReference<LayoutInflater>? = null
     private val updateCallback by lazy { AdapterListUpdateCallback(this) }
     private var recycler: IRecyclerModel<T> = CollectionsModel(updateCallback)
-    private var clickBlock: ((T, Int) -> Unit)? = null
-    private var clickLongBlock: ((T, Int) -> Unit)? = null
+
 
     fun <M : IRecyclerModel<T>> setRecyclerModel(block: ((ListUpdateCallback) -> M)) {
         this.recycler = block.invoke(updateCallback)
@@ -57,32 +56,6 @@ abstract class RecyclerAdapter<T : Any, VH : RecyclerView.ViewHolder> : Recycler
 
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
         this.weakInflater = null
-    }
-
-    private fun handleClickEvent(holder: VH) {
-        clickBlock?.let {
-            holder.itemView.setOnClickListener {
-                val position = holder.absoluteAdapterPosition
-                val data = if (position > 0) getItem(position) else null
-                data?.let { clickBlock!!.invoke(data, position) }
-            }
-        }
-        clickLongBlock?.let {
-            holder.itemView.setOnLongClickListener {
-                val position = holder.absoluteAdapterPosition
-                val data = if (position > 0) getItem(position) else null
-                data?.let { clickLongBlock!!.invoke(data, position) }
-                return@setOnLongClickListener true
-            }
-        }
-    }
-
-    fun setOnItemClickListener(click: ((T, Int) -> Unit)) {
-        this.clickBlock = click
-    }
-
-    fun setOnItemLongClickListener(click: ((T, Int) -> Unit)) {
-        this.clickLongBlock = click
     }
 
     companion object {
