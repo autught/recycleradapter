@@ -31,7 +31,7 @@ abstract class RecyclerAdapter<T : Any, VH : RecyclerView.ViewHolder> : Recycler
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
         val inflater = weakInflater?.get() ?: LayoutInflater.from(parent.context)
-        return create(inflater, parent, viewType).also {
+        return create(inflater, parent).also {
             val position = it.bindingAdapterPosition
             val data = getItem(position)
             handleClickEvent?.handleClickEvent(it.itemView, data, position)
@@ -105,9 +105,8 @@ abstract class RecyclerAdapter<T : Any, VH : RecyclerView.ViewHolder> : Recycler
             object : RecyclerAdapter<T, VH>() {
                 override fun create(
                     inflater: LayoutInflater,
-                    parent: ViewGroup,
-                    type: Int
-                ) = controller.create(inflater, parent, type)
+                    parent: ViewGroup
+                ) = controller.create(inflater, parent)
 
                 override fun bind(data: T, holder: VH, position: Int) {
                     controller.bind(data, holder, position)

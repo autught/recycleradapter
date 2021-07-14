@@ -15,11 +15,14 @@ typealias  ClickEvent<A> = ((A?, Int) -> Unit)
 
 interface IRecyclerController<T : Any, VH : RecyclerView.ViewHolder> {
 
-    fun create(inflater: LayoutInflater, parent: ViewGroup, type: Int): VH
+    fun create(inflater: LayoutInflater, parent: ViewGroup): VH
 
     fun bind(data: T, holder: VH, position: Int)
 
     fun bindPayloads(data: T, holder: VH, position: Int): Unit? = null
+
+    fun invoke(inflater: LayoutInflater, parent: ViewGroup): VH =
+        create(inflater, parent)
 
 //    fun setHandleClickEvent(event: ClickEvent<T>): Unit? = null
 //
