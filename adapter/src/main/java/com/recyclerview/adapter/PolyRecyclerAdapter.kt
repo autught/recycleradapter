@@ -16,7 +16,7 @@ open class PolyRecyclerAdapter(
     vararg controllers: IRecyclerController<out Any, out RecyclerView.ViewHolder>,
 ) : RecyclerAdapter<Any, RecyclerView.ViewHolder>() {
     private val models = SparseArrayCompat<IRecyclerController<Any, RecyclerView.ViewHolder>>()
-    private var block: ((Any, Int) -> Int?)
+    private var createTypeFunc: ((Any, Int) -> Int?)
 
     init {
         val typeMap = ArrayMap<Class<*>, Int>()
@@ -29,15 +29,18 @@ open class PolyRecyclerAdapter(
             val parameterizedType = item.javaClass.genericSuperclass as ParameterizedType
             typeMap[parameterizedType.actualTypeArguments[0] as Class<*>] = index
         }
-        block = { t, _ -> typeMap[t.javaClass] }
+        createTypeFunc = { t, _ -> typeMap[t.javaClass] }
+        setHandleClickEvent{data,index->
+models[getItemViewType(index)]?.setHandleClickEvent(data,index)
+        }
     }
 
     fun setupItemType(block: ((Any, Int) -> Int?)) {
-        this.block = block
+        this.createTypeFunc = block
     }
 
     override fun getItemViewType(position: Int): Int {
-        return block.invoke(requireNotNull(getItem(position)), position)
+        return createTypeFunc.invoke(requireNotNull(getItem(position)), position)
             ?: super.getItemViewType(position)
     }
 
@@ -46,7 +49,8 @@ open class PolyRecyclerAdapter(
         parent: ViewGroup,
         type: Int,
     ): RecyclerView.ViewHolder {
-        return requireNotNull(models[type]).create(inflater, parent, type)
+        val controller = requireNotNull(models[type])
+        return controller.create(inflater, parent, type)
     }
 
     override fun bind(data: Any, holder: RecyclerView.ViewHolder, position: Int) {
