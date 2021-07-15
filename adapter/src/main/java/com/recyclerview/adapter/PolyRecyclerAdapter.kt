@@ -13,30 +13,25 @@ import java.lang.reflect.ParameterizedType
  * @date :   2021/7/8 23:20
  */
 open class PolyRecyclerAdapter(
-    vararg controllers: IRecyclerController<out Any, out RecyclerView.ViewHolder>,
+    vararg controllers: IRecyclerController<in Any, in RecyclerView.ViewHolder>,
+    block: ((Any, Int) -> Int?)? = null
 ) : RecyclerAdapter<Any, RecyclerView.ViewHolder>() {
-    private val models = SparseArrayCompat<IRecyclerController<Any, RecyclerView.ViewHolder>>()
-    private var createTypeFunc: ((Any, Int) -> Int?)
+    private val models =
+        SparseArrayCompat<IRecyclerController<in Any, in RecyclerView.ViewHolder>>()
+    private val createTypeFunc: ((Any, Int) -> Int?)
 
+    /**
+     * 将controllers数组中item的下标作为type
+     */
     init {
         val typeMap = ArrayMap<Class<*>, Int>()
         @Suppress("UNCHECKED_CAST")
         controllers.forEachIndexed { index, item ->
-            models.takeIf { !it.containsKey(index) }?.put(
-                index,
-                item as IRecyclerController<Any, RecyclerView.ViewHolder>
-            )
+            models.takeIf { !it.containsKey(index) }?.put(index, item)
             val parameterizedType = item.javaClass.genericSuperclass as ParameterizedType
             typeMap[parameterizedType.actualTypeArguments[0] as Class<*>] = index
         }
-        createTypeFunc = { t, _ -> typeMap[t.javaClass] }
-        setHandleClickEvent{data,index->
-models[getItemViewType(index)]?.setHandleClickEvent(data,index)
-        }
-    }
-
-    fun setupItemType(block: ((Any, Int) -> Int?)) {
-        this.createTypeFunc = block
+        createTypeFunc = block ?: { t, _ -> typeMap[t.javaClass] }
     }
 
     override fun getItemViewType(position: Int): Int {
@@ -50,7 +45,7 @@ models[getItemViewType(index)]?.setHandleClickEvent(data,index)
         type: Int,
     ): RecyclerView.ViewHolder {
         val controller = requireNotNull(models[type])
-        return controller.create(inflater, parent, type)
+        return controller.create(inflater, parent, type) as RecyclerView.ViewHolder
     }
 
     override fun bind(data: Any, holder: RecyclerView.ViewHolder, position: Int) {

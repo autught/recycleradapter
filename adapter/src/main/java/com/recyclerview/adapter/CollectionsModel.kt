@@ -15,7 +15,7 @@ class CollectionsModel<T : Any>(
     override val itemCount: Int
         get() = mData.count()
 
-    override fun submitData(data: MutableList<T>) {
+    override fun submitData(data: Collection<T>) {
         val originSize = itemCount
         mData.addAll(data)
         // notifyDataChanged

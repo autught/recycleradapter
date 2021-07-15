@@ -1,12 +1,9 @@
 package com.recyclerview.adapter
 
-import android.os.Build
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
-import java.lang.invoke.MethodHandles
-import java.lang.invoke.MethodType
 
 /**
  * @description:
@@ -18,7 +15,7 @@ abstract class CustomController<T : Any> :
     private var layoutResId: Int? = null
     private var vbClazz: Class<out ViewBinding>? = null
 
-    constructor(layoutResId: Int? = null) {
+    constructor(layoutResId: Int) {
         this.layoutResId = layoutResId
     }
 
@@ -29,12 +26,12 @@ abstract class CustomController<T : Any> :
     override fun create(
         inflater: LayoutInflater,
         parent: ViewGroup,
+        type: Int
     ): RecyclerView.ViewHolder {
         return when {
             layoutResId != null -> layoutResId!!.layout(inflater, parent)
-            vbClazz != null -> vbClazz!!.bind(inflater, parent)
-                ?: super.invoke(inflater, parent)
-            else -> super.invoke(inflater, parent)
+            vbClazz != null -> vbClazz!!.bind(inflater, parent)!!
+            else -> throw IllegalArgumentException("must implements the method named create()")
         }
     }
 
@@ -48,24 +45,24 @@ abstract class CustomController<T : Any> :
         parent: ViewGroup
     ): ViewBindingHolder<VB>? {
         try {
-            val binding = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val methodType = MethodType.methodType(
-                    LayoutInflater::class.java,
-                    ViewGroup::class.java,
-                    Boolean::class.java, this
-                )
-                val method = MethodHandles.lookup()
-                    .findStatic(this, "inflate", methodType)
-                method.invoke(inflater, parent, false) as VB
-            } else {
-                val method = getDeclaredMethod(
-                    "inflate",
-                    LayoutInflater::class.java,
-                    ViewGroup::class.java,
-                    Boolean::class.java,
-                )
-                method.invoke(null, inflater, parent, false) as VB
-            }
+//            val binding = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//                val methodType = MethodType.methodType(
+//                    LayoutInflater::class.java,
+//                    ViewGroup::class.java,
+//                    Boolean::class.java, this
+//                )
+//                val method = MethodHandles.lookup()
+//                    .findStatic(this, "inflate", methodType)
+//                method.invoke(inflater, parent, false) as VB
+//            } else {
+            val method = getDeclaredMethod(
+                "inflate",
+                LayoutInflater::class.java,
+                ViewGroup::class.java,
+                Boolean::class.java,
+            )
+            val binding = method.invoke(null, inflater, parent, false) as VB
+//            }
             return ViewBindingHolder(binding)
         } catch (e: Exception) {
             return null

@@ -10,7 +10,7 @@ import androidx.annotation.IntRange
 interface IRecyclerModel<T> {
     val itemCount: Int
 
-    fun submitData(data: MutableList<T>)
+    fun submitData(data: Collection<T>)
 
     fun getItem(@IntRange(from = 0) index: Int): T?
 }
