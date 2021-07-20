@@ -13,11 +13,11 @@ import java.lang.reflect.ParameterizedType
  * @date :   2021/7/8 23:20
  */
 open class PolyRecyclerAdapter(
-    vararg controllers: IRecyclerController<in Any, in RecyclerView.ViewHolder>,
+    vararg controllers: IRecyclerController<out Any, out RecyclerView.ViewHolder>,
     block: ((Any, Int) -> Int?)? = null
 ) : RecyclerAdapter<Any, RecyclerView.ViewHolder>() {
     private val models =
-        SparseArrayCompat<IRecyclerController<in Any, in RecyclerView.ViewHolder>>()
+        SparseArrayCompat<IRecyclerController<Any, RecyclerView.ViewHolder>>()
     private val createTypeFunc: ((Any, Int) -> Int?)
 
     /**
@@ -27,7 +27,8 @@ open class PolyRecyclerAdapter(
         val typeMap = ArrayMap<Class<*>, Int>()
         @Suppress("UNCHECKED_CAST")
         controllers.forEachIndexed { index, item ->
-            models.takeIf { !it.containsKey(index) }?.put(index, item)
+            models.takeIf { !it.containsKey(index) }
+                ?.put(index, item as IRecyclerController<Any, RecyclerView.ViewHolder>)
             val parameterizedType = item.javaClass.genericSuperclass as ParameterizedType
             typeMap[parameterizedType.actualTypeArguments[0] as Class<*>] = index
         }
@@ -45,7 +46,7 @@ open class PolyRecyclerAdapter(
         type: Int,
     ): RecyclerView.ViewHolder {
         val controller = requireNotNull(models[type])
-        return controller.create(inflater, parent, type) as RecyclerView.ViewHolder
+        return controller.create(inflater, parent, type)
     }
 
     override fun bind(data: Any, holder: RecyclerView.ViewHolder, position: Int) {

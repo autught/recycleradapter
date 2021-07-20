@@ -1,6 +1,7 @@
 package com.recyclerview.adapter
 
 import androidx.annotation.IntRange
+import androidx.recyclerview.widget.ListUpdateCallback
 
 /**
  * @description:
@@ -13,4 +14,6 @@ interface IRecyclerModel<T> {
     fun submitData(data: Collection<T>)
 
     fun getItem(@IntRange(from = 0) index: Int): T?
+
+    fun getCollection(): List<T>
 }

@@ -65,6 +65,10 @@ abstract class RecyclerAdapter<T : Any, VH : RecyclerView.ViewHolder> : Recycler
         recycler.submitData(data)
     }
 
+    fun getCollection(): List<T> {
+        return recycler.getCollection()
+    }
+
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         this.weakInflater = WeakReference(LayoutInflater.from(recyclerView.context))
     }

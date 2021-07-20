@@ -3,11 +3,11 @@ package com.recyclerview.adapter
 import androidx.recyclerview.widget.ListUpdateCallback
 
 /**
- * @description:
+ * @description:可变数据操控类
  * @author:  79120
  * @date :   2021/6/23 14:26
  */
-class CollectionsModel<T : Any>(
+open class CollectionsModel<T : Any>(
     private val updateCallback: ListUpdateCallback,
 ) : IRecyclerModel<T> {
     private val mData = mutableListOf<T>()
@@ -17,6 +17,7 @@ class CollectionsModel<T : Any>(
 
     override fun submitData(data: Collection<T>) {
         val originSize = itemCount
+        mData.clear()
         mData.addAll(data)
         // notifyDataChanged
         if (originSize > data.count()) {
@@ -41,5 +42,9 @@ class CollectionsModel<T : Any>(
     override fun getItem(index: Int): T {
         require(index < itemCount)
         return mData[index]
+    }
+
+    override fun getCollection(): List<T> {
+        return mData
     }
 }

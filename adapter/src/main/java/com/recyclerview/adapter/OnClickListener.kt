@@ -8,10 +8,10 @@ import androidx.collection.SparseArrayCompat
  * @author:  79120
  * @date :   2021/7/15 10:31
  */
-typealias  ClickEvent<A> = (A?, Int) -> Unit
+typealias  ClickEvent<A> = (A, Int) -> Unit
 
 interface OnAdapterClickListener<T> {
-    var handleClickEvent: (T?.(Int) -> Unit)?
+    var handleClickEvent: (T.(Int) -> Unit)?
     var handleLongClickEvent: ClickEvent<T>?
     var handleChildClickPairs: SparseArrayCompat<ClickEvent<T>>?
 
@@ -22,12 +22,12 @@ interface OnAdapterClickListener<T> {
         handleChildClickPairs?.takeIf { !it.containsKey(resId) }?.put(resId, event)
     }
 
-    fun ClickEvent<T>.handleClickEvent(view: View, data: T?, position: Int) {
-        view.setOnClickListener { invoke(data, position) }
+    fun ClickEvent<T>.handleClickEvent(view: View?, data: T, position: Int) {
+        view?.setOnClickListener { invoke(data, position) }
     }
 
-    fun ClickEvent<T>.handleLongClickEvent(view: View, data: T?, position: Int) {
-        view.setOnLongClickListener {
+    fun ClickEvent<T>.handleLongClickEvent(view: View?, data: T, position: Int) {
+        view?.setOnLongClickListener {
             invoke(data, position)
             return@setOnLongClickListener true
         }

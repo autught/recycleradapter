@@ -30,5 +30,8 @@ class BaseViewHolder(view: View) : RecyclerView.ViewHolder(view) {
 
 }
 
-class ViewBindingHolder<VB : ViewBinding>(protected val binding: VB) :
-    RecyclerView.ViewHolder(binding.root)
+class ViewBindingHolder<VB : ViewBinding>(private val binding: VB) :
+    RecyclerView.ViewHolder(binding.root) {
+
+    fun getBinding() = binding
+}

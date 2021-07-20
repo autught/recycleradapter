@@ -2,7 +2,6 @@ package com.recyclerview.adapter
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 
 /**
@@ -10,62 +9,56 @@ import androidx.viewbinding.ViewBinding
  * @author:  79120
  * @date :   2021/7/14 15:44
  */
-abstract class CustomController<T : Any> :
-    IRecyclerController<T, RecyclerView.ViewHolder> {
-    private var layoutResId: Int? = null
-    private var vbClazz: Class<out ViewBinding>? = null
-
-    constructor(layoutResId: Int) {
-        this.layoutResId = layoutResId
-    }
-
-    constructor(clazz: Class<out ViewBinding>) {
-        this.vbClazz = clazz
-    }
+abstract class LayoutController<T : Any>(private val layoutResId: Int) :
+    IRecyclerController<T, BaseViewHolder> {
 
     override fun create(
         inflater: LayoutInflater,
         parent: ViewGroup,
         type: Int
-    ): RecyclerView.ViewHolder {
-        return when {
-            layoutResId != null -> layoutResId!!.layout(inflater, parent)
-            vbClazz != null -> vbClazz!!.bind(inflater, parent)!!
-            else -> throw IllegalArgumentException("must implements the method named create()")
-        }
+    ): BaseViewHolder {
+        return BaseViewHolder(inflater.inflate(layoutResId, parent, false))
     }
+}
 
-    private fun Int.layout(inflater: LayoutInflater, parent: ViewGroup): BaseViewHolder {
-        return BaseViewHolder(inflater.inflate(this, parent, false))
-    }
+abstract class BindingController<T : Any>(private val vbClazz: Class<out ViewBinding>) :
+    IRecyclerController<T, ViewBindingHolder<*>> {
 
-    @Suppress("UNCHECKED_CAST")
-    private fun <VB : ViewBinding> Class<VB>.bind(
+    override fun create(
         inflater: LayoutInflater,
-        parent: ViewGroup
-    ): ViewBindingHolder<VB>? {
-        try {
-//            val binding = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//                val methodType = MethodType.methodType(
-//                    LayoutInflater::class.java,
-//                    ViewGroup::class.java,
-//                    Boolean::class.java, this
-//                )
-//                val method = MethodHandles.lookup()
-//                    .findStatic(this, "inflate", methodType)
-//                method.invoke(inflater, parent, false) as VB
-//            } else {
-            val method = getDeclaredMethod(
-                "inflate",
-                LayoutInflater::class.java,
-                ViewGroup::class.java,
-                Boolean::class.java,
-            )
-            val binding = method.invoke(null, inflater, parent, false) as VB
-//            }
-            return ViewBindingHolder(binding)
-        } catch (e: Exception) {
-            return null
-        }
+        parent: ViewGroup,
+        type: Int
+    ): ViewBindingHolder<*> {
+        return vbClazz.bind(inflater, parent)!!
+    }
+}
+
+@Suppress("UNCHECKED_CAST")
+private fun <VB : ViewBinding> Class<VB>.bind(
+    inflater: LayoutInflater,
+    parent: ViewGroup
+): ViewBindingHolder<VB>? {
+    try {
+//        val binding = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//            val methodType = MethodType.methodType(
+//                LayoutInflater::class.java,
+//                ViewGroup::class.java,
+//                Boolean::class.java, this
+//            )
+//            val method = MethodHandles.lookup()
+//                .findStatic(this, "inflate", methodType)
+//            method.invoke(inflater, parent, false) as VB
+//        } else {
+        val method = getDeclaredMethod(
+            "inflate",
+            LayoutInflater::class.java,
+            ViewGroup::class.java,
+            Boolean::class.java,
+        )
+        val binding = method.invoke(null, inflater, parent, false) as VB
+//        }
+        return ViewBindingHolder(binding)
+    } catch (e: Exception) {
+        return null
     }
 }
