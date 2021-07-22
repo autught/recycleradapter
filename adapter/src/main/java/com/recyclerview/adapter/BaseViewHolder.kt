@@ -30,8 +30,9 @@ class BaseViewHolder(view: View) : RecyclerView.ViewHolder(view) {
 
 }
 
-class ViewBindingHolder<VB : ViewBinding>(private val binding: VB) :
+class ViewBindingHolder(private val binding: ViewBinding) :
     RecyclerView.ViewHolder(binding.root) {
 
-    fun getBinding() = binding
+    @Suppress("UNCHECKED_CAST")
+    fun <VB : ViewBinding> getBinding() = binding as VB
 }

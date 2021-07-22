@@ -22,13 +22,13 @@ abstract class LayoutController<T : Any>(private val layoutResId: Int) :
 }
 
 abstract class BindingController<T : Any>(private val vbClazz: Class<out ViewBinding>) :
-    IRecyclerController<T, ViewBindingHolder<*>> {
+    IRecyclerController<T, ViewBindingHolder> {
 
     override fun create(
         inflater: LayoutInflater,
         parent: ViewGroup,
         type: Int
-    ): ViewBindingHolder<*> {
+    ): ViewBindingHolder {
         return vbClazz.bind(inflater, parent)!!
     }
 }
@@ -37,7 +37,7 @@ abstract class BindingController<T : Any>(private val vbClazz: Class<out ViewBin
 private fun <VB : ViewBinding> Class<VB>.bind(
     inflater: LayoutInflater,
     parent: ViewGroup
-): ViewBindingHolder<VB>? {
+): ViewBindingHolder? {
     try {
 //        val binding = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 //            val methodType = MethodType.methodType(
