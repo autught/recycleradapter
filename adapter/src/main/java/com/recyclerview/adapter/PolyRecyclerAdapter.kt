@@ -36,7 +36,7 @@ open class PolyRecyclerAdapter(
     }
 
     override fun getItemViewType(position: Int): Int {
-        return createTypeFunc.invoke(requireNotNull(getItem(position)), position)
+        return createTypeFunc.invoke(getItem(position), position)
             ?: super.getItemViewType(position)
     }
 

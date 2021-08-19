@@ -13,7 +13,7 @@ interface IRecyclerModel<T> {
 
     fun submitData(data: Collection<T>)
 
-    fun getItem(@IntRange(from = 0) index: Int): T?
+    fun getItem(@IntRange(from = 0) index: Int): T
 
     fun getCollection(): List<T>
 }

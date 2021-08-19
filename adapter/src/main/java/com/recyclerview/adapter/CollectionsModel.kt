@@ -32,15 +32,16 @@ open class CollectionsModel<T : Any>(
             if (originSize > 0) {
                 updateCallback.onChanged(0, originSize, null)
             }
-        } else {
-            if (data.count() > 0) {
-                updateCallback.onChanged(0, data.count(), null)
-            }
+        }
+        if (originSize > 0) {
+            updateCallback.onChanged(0, originSize, null)
         }
     }
 
     override fun getItem(index: Int): T {
-        require(index < itemCount)
+        require(index in 0 until itemCount) {
+            "index 传值超域"
+        }
         return mData[index]
     }
 

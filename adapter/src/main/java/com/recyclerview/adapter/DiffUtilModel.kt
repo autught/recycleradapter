@@ -26,7 +26,7 @@ open class DiffUtilModel<T>(
         differBase.submitList(data.toMutableList())
     }
 
-    override fun getItem(index: Int): T? {
+    override fun getItem(index: Int): T {
         require(index < itemCount)
         return differBase.currentList[index]
     }
