@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
  * @author:  79120
  * @date :   2021/7/9 11:25
  */
-fun interface IViewHolderProduce<VH : RecyclerView.ViewHolder> {
+interface IViewHolderProduce<VH : RecyclerView.ViewHolder> {
+    fun getItemType():Int
     fun onProduce(inflater: LayoutInflater, parent: ViewGroup, viewType: Int): VH
 }
