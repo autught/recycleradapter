@@ -11,9 +11,9 @@ import androidx.recyclerview.widget.ListUpdateCallback
 interface IRecyclerModel<T> {
     val itemCount: Int
 
-    fun submitData(data: Collection<T>)
+    fun submitData(data: List<T>)
 
     fun getItem(@IntRange(from = 0) index: Int): T
 
-    fun getCollection(): List<T>
+    fun getCurrentList(): List<T>
 }

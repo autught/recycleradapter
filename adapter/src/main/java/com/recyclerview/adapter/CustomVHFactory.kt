@@ -9,8 +9,8 @@ import androidx.viewbinding.ViewBinding
  * @author:  79120
  * @date :   2021/7/14 15:44
  */
-class LayoutProduce(private val layoutResId: Int) : IViewHolderProduce<BaseViewHolder> {
-    override fun onProduce(
+class LayoutVHFactory(private val layoutResId: Int) : IViewHolderFactory<BaseViewHolder> {
+    override fun onCreate(
         inflater: LayoutInflater,
         parent: ViewGroup,
         viewType: Int
@@ -19,9 +19,9 @@ class LayoutProduce(private val layoutResId: Int) : IViewHolderProduce<BaseViewH
     }
 }
 
-class ViewBindingProduce(private val vbClazz: Class<out ViewBinding>) :
-    IViewHolderProduce<ViewBindingHolder> {
-    override fun onProduce(
+class ViewBindingVHFactory(private val vbClazz: Class<out ViewBinding>) :
+    IViewHolderFactory<ViewBindingHolder> {
+    override fun onCreate(
         inflater: LayoutInflater,
         parent: ViewGroup,
         viewType: Int

@@ -22,7 +22,7 @@ open class DiffUtilModel<T>(
     override val itemCount: Int
         get() = differBase.currentList.count()
 
-    override fun submitData(data: Collection<T>) {
+    override fun submitData(data: List<T>) {
         differBase.submitList(data.toMutableList())
     }
 
@@ -31,7 +31,7 @@ open class DiffUtilModel<T>(
         return differBase.currentList[index]
     }
 
-    override fun getCollection(): List<T> {
+    override fun getCurrentList(): List<T> {
         return differBase.currentList
     }
 }

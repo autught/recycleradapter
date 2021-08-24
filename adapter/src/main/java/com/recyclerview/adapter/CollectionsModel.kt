@@ -15,7 +15,7 @@ open class CollectionsModel<T : Any>(
     override val itemCount: Int
         get() = mData.count()
 
-    override fun submitData(data: Collection<T>) {
+    override fun submitData(data: List<T>) {
         val originSize = itemCount
         mData.clear()
         mData.addAll(data)
@@ -45,7 +45,7 @@ open class CollectionsModel<T : Any>(
         return mData[index]
     }
 
-    override fun getCollection(): List<T> {
+    override fun getCurrentList(): List<T> {
         return mData
     }
 }
