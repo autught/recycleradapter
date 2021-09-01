@@ -12,27 +12,30 @@ import androidx.viewbinding.ViewBinding
  * @date :   2020/11/10 16:40
  */
 class BaseViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+
     /**
      * Views indexed with their IDs
      */
-    private val views: SparseArray<View?> = SparseArray()
+    private var views: SparseArray<View?>? = null
 
     @Suppress("UNCHECKED_CAST")
     fun <T : View> findViewById(@IdRes viewId: Int): T {
-        var view = views.get(viewId)
+        var view = views?.get(viewId)
         if (view == null) {
             view = itemView.findViewById<T>(viewId)
                 ?: throw NullPointerException("NullPointerException,can't find this id")
-            views.put(viewId, view)
+            if (views == null) {
+                views = SparseArray()
+            }
+            views!!.put(viewId, view)
         }
         return view as T
     }
 
 }
 
-class ViewBindingHolder(private val binding: ViewBinding) :
-    RecyclerView.ViewHolder(binding.root) {
-
-    @Suppress("UNCHECKED_CAST")
-    fun <VB : ViewBinding> getBinding() = binding as VB
-}
+/**
+ * 如果使用viewBinding注意在RecyclerView.Adapter$onViewRecycled()中置空
+ */
+class ViewBindingHolder<VB : ViewBinding>(val binding: VB) :
+    RecyclerView.ViewHolder(binding.root)

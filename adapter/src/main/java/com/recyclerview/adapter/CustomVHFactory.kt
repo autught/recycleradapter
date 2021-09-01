@@ -1,15 +1,17 @@
 package com.recyclerview.adapter
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.viewbinding.ViewBinding
+import androidx.viewbinding.ViewBindings
 
 /**
  * @description:
  * @author:  79120
  * @date :   2021/7/14 15:44
  */
-class LayoutVHFactory(private val layoutResId: Int) : IViewHolderFactory<BaseViewHolder> {
+class LayoutFactory(private val layoutResId: Int) : IViewHolderFactory<BaseViewHolder> {
     override fun onCreate(
         inflater: LayoutInflater,
         parent: ViewGroup,
@@ -19,13 +21,13 @@ class LayoutVHFactory(private val layoutResId: Int) : IViewHolderFactory<BaseVie
     }
 }
 
-class ViewBindingVHFactory(private val vbClazz: Class<out ViewBinding>) :
-    IViewHolderFactory<ViewBindingHolder> {
+class ViewBindingFactory<VB:ViewBinding>(private val vbClazz: Class<VB>) :
+    IViewHolderFactory<ViewBindingHolder<VB>> {
     override fun onCreate(
         inflater: LayoutInflater,
         parent: ViewGroup,
         viewType: Int
-    ): ViewBindingHolder {
+    ): ViewBindingHolder<VB> {
         return bind(vbClazz, inflater, parent)
     }
 
@@ -34,7 +36,7 @@ class ViewBindingVHFactory(private val vbClazz: Class<out ViewBinding>) :
         clazz: Class<VB>,
         inflater: LayoutInflater,
         parent: ViewGroup
-    ): ViewBindingHolder {
+    ): ViewBindingHolder<VB> {
         val method = clazz.getDeclaredMethod(
             "inflate",
             LayoutInflater::class.java,

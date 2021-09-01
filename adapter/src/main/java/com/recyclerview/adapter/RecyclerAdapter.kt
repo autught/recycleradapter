@@ -1,26 +1,48 @@
 package com.recyclerview.adapter
 
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.IdRes
+import androidx.collection.SparseArrayCompat
 import androidx.recyclerview.widget.AdapterListUpdateCallback
 import androidx.recyclerview.widget.ListUpdateCallback
 import androidx.recyclerview.widget.RecyclerView
 import java.lang.ref.WeakReference
+import java.lang.reflect.Type
+import java.lang.reflect.TypeVariable
+import kotlin.reflect.KClass
 
 /**
  * @description:
  * @author:  79120
  * @date :   2021/6/21 15:49
  */
-abstract class RecyclerAdapter<T : Any, VH : RecyclerView.ViewHolder>(private val produce: IViewHolderFactory<VH>) :
-    RecyclerView.Adapter<VH>() {
+abstract class RecyclerAdapter<T : Any, VH : RecyclerView.ViewHolder>() :
+    RecyclerView.Adapter<VH>(), IViewCreatedFactory<VH> {
     private var weakInflater: WeakReference<LayoutInflater>? = null
     private val updateCallback by lazy { AdapterListUpdateCallback(this) }
     private var recycler: IRecyclerModel<T> = CollectionsModel(updateCallback)
-    private var itemClickPair: Pair<RecyclerView.ViewHolder.() -> Int, (T, Int) -> Unit>? = null
-//    private var onItemClickCallback: OnItemClickCallback<T>? = null
-//    private var onItemLongClickCallback: OnItemLongClickCallback<T>? = null
-//    private var onItemChildClickCallbacks: SparseArrayCompat<OnItemChildClickCallback<T>>? = null
+    private var itemChildClickLists: SparseArrayCompat<(T, Int, Int) -> Unit>? = null
+    private var itemClickCallback: ((T, Int) -> Unit)? = null
+    private var itemLongClickCallback: ((T, Int) -> Unit)? = null
+    private var statusAdapter: StatusAdapter? = null
+
+    @State
+    private var state: Int? = null
+
+    fun setOnItemClickCallback(clickEvent: (T, Int) -> Unit) {
+        itemClickCallback = clickEvent
+    }
+
+    fun setOnItemLongClickCallback(clickEvent: (T, Int) -> Unit) {
+        itemLongClickCallback = clickEvent
+    }
+
+    fun setOnItemChildClickCallback(@IdRes viewId: Int, clickEvent: (T, Int, Int) -> Unit) {
+        if (itemChildClickLists == null) itemChildClickLists = SparseArrayCompat()
+        itemChildClickLists!!.put(viewId, clickEvent)
+    }
 
     fun <M : IRecyclerModel<T>> setRecyclerModel(block: ((ListUpdateCallback) -> M)) {
         this.recycler = block.invoke(updateCallback)
@@ -28,7 +50,12 @@ abstract class RecyclerAdapter<T : Any, VH : RecyclerView.ViewHolder>(private va
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
         val inflater = weakInflater?.get() ?: LayoutInflater.from(parent.context)
-        return produce.onCreate(inflater, parent, viewType)
+        if (state!=State.STATE_NORMAL){
+            val view=requireNotNull(statusAdapter).onCreateView(inflater,parent)
+            return BaseViewHolder(view)
+        }else{
+            return onViewCreated(inflater, parent, viewType).also { setItemClickEvent(it) }
+        }
     }
 
     override fun getItemCount(): Int = recycler.itemCount
@@ -43,19 +70,6 @@ abstract class RecyclerAdapter<T : Any, VH : RecyclerView.ViewHolder>(private va
         return recycler.getCurrentList()
     }
 
-//    fun setOnItemClickCallback(callback: OnItemClickCallback<T>) {
-//        this.onItemClickCallback = callback
-//    }
-//
-//    fun setOnItemLongClickCallback(callback: OnItemLongClickCallback<T>) {
-//        this.onItemLongClickCallback = callback
-//    }
-//
-//    fun setOnItemChildClickCallback(@IdRes id: Int, callback: OnItemChildClickCallback<T>) {
-//        if (onItemChildClickCallbacks == null) onItemChildClickCallbacks = SparseArrayCompat()
-//        onItemChildClickCallbacks?.put(id, callback)
-//    }
-
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         this.weakInflater = WeakReference(LayoutInflater.from(recyclerView.context))
     }
@@ -66,51 +80,41 @@ abstract class RecyclerAdapter<T : Any, VH : RecyclerView.ViewHolder>(private va
 
     fun notifyDataModify(modify: CollectionModifiedModel<T>.() -> Unit) {
         if (recycler is CollectionModifiedModel<T>) {
-            modify.invoke(recycler)
+            modify.invoke(recycler as CollectionModifiedModel<T>)
         }
     }
 
-//    private fun RecyclerView.ViewHolder.handle() {
-//        onItemClickCallback?.let {
-//            handleClickBound(this, this.itemView) { d, i -> it.handle(d, i) }
-//        }
-//        onItemChildClickCallbacks?.let { sac ->
-//            for (index in 0 until sac.size()) {
-//                val view = this.itemView.findViewById<View>(sac.keyAt(index))
-//                handleClickBound(this, view) { d, i ->
-//                    sac.valueAt(index).handle(view, d, i)
-//                }
-//            }
-//        }
-//        onItemLongClickCallback?.let {
-//            handleLongClickBound(this, this.itemView) { d, i -> it.handle(d, i) }
-//        }
-//    }
-//
-//    private fun handleClickBound(
-//        helper: RecyclerView.ViewHolder,
-//        view: View?,
-//        block: (T, Int) -> Unit
-//    ) {
-//        view?.setOnClickListener {
-//            val position = helper.bindingAdapterPosition
-//            if (position in 1 until itemCount) {
-//                block.invoke(getItem(position), position)
-//            }
-//        }
-//    }
-//
-//    private fun handleLongClickBound(
-//        helper: RecyclerView.ViewHolder,
-//        view: View?,
-//        block: (T, Int) -> Unit
-//    ) {
-//        view?.setOnLongClickListener {
-//            val position = helper.bindingAdapterPosition
-//            if (position in 1 until itemCount) {
-//                block.invoke(getItem(position), position)
-//            }
-//            return@setOnLongClickListener true
-//        }
-//    }
+    private fun setItemClickEvent(helper: VH) {
+        itemClickCallback?.let { block ->
+            helper.itemView.setOnClickListener {
+                val position = helper.bindingAdapterPosition
+                block(getItem(position), position)
+            }
+        }
+        itemLongClickCallback?.let { block ->
+            helper.itemView.setOnLongClickListener {
+                val position = helper.bindingAdapterPosition
+                block(getItem(position), position)
+                return@setOnLongClickListener true
+            }
+        }
+    }
+
+    /**
+     * 设置点击事件
+     * 最好在onCreateViewHolder()或onViewCreated()中设置
+     */
+    fun setChildClickEvent(helper: VH, view: View) {
+        itemChildClickLists?.get(view.id)?.let { block ->
+            view.setOnClickListener {
+                val position = helper.bindingAdapterPosition
+                block(getItem(position), position, it.id)
+            }
+        }
+    }
+
+    fun setEmptyAdapter(adapter: StatusAdapter) {
+        this.statusAdapter = adapter
+    }
+
 }
