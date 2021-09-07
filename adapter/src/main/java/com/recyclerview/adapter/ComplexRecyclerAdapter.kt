@@ -4,7 +4,6 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.collection.ArrayMap
 import androidx.collection.SparseArrayCompat
-import androidx.recyclerview.widget.RecyclerView
 import java.lang.reflect.ParameterizedType
 
 /**
@@ -12,12 +11,11 @@ import java.lang.reflect.ParameterizedType
  * @author:  79120
  * @date :   2021/7/8 23:20
  */
-open class PolyRecyclerAdapter(
-    vararg controllers: IRecyclerController<out Any, out RecyclerView.ViewHolder>,
+open class ComplexRecyclerAdapter(
+    vararg controllers: RecyclerAdapter<in Any>,
     block: ((Any, Int) -> Int?)? = null
-) : RecyclerAdapter<Any, RecyclerView.ViewHolder>() {
-    private val models =
-        SparseArrayCompat<IRecyclerController<Any, RecyclerView.ViewHolder>>()
+) : RecyclerAdapter<Any>() {
+    private val models = SparseArrayCompat<RecyclerAdapter<Any>>()
     private val createTypeFunc: ((Any, Int) -> Int?)
 
     /**
@@ -25,10 +23,9 @@ open class PolyRecyclerAdapter(
      */
     init {
         val typeMap = ArrayMap<Class<*>, Int>()
-        @Suppress("UNCHECKED_CAST")
         controllers.forEachIndexed { index, item ->
             models.takeIf { !it.containsKey(index) }
-                ?.put(index, item as IRecyclerController<Any, RecyclerView.ViewHolder>)
+                ?.put(index, item)
             val parameterizedType = item.javaClass.genericSuperclass as ParameterizedType
             typeMap[parameterizedType.actualTypeArguments[0] as Class<*>] = index
         }
@@ -40,24 +37,17 @@ open class PolyRecyclerAdapter(
             ?: super.getItemViewType(position)
     }
 
-    override fun create(
+    override fun onViewHolderCreated(
         inflater: LayoutInflater,
         parent: ViewGroup,
-        type: Int,
-    ): RecyclerView.ViewHolder {
-        val controller = requireNotNull(models[type])
-        return controller.create(inflater, parent, type)
+        viewType: Int
+    ): BaseViewHolder {
+        return requireNotNull(models[viewType]).onCreateViewHolder(parent, viewType)
     }
 
-    override fun bind(data: Any, holder: RecyclerView.ViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: BaseViewHolder, data: Any, position: Int) {
         val type = getItemViewType(position)
-        require(models.containsKey(type))
-        models[type]?.bind(data, holder, position)
+        models[type]?.onBindViewHolder(holder, data, position)
     }
 
-    override fun bindPayloads(data: Any, holder: RecyclerView.ViewHolder, position: Int) {
-        val type = getItemViewType(position)
-        require(models.containsKey(type))
-        models[type]?.bindPayloads(data, holder, position)
-    }
 }

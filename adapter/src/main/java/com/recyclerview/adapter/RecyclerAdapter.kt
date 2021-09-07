@@ -1,5 +1,6 @@
 package com.recyclerview.adapter
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,17 +10,14 @@ import androidx.recyclerview.widget.AdapterListUpdateCallback
 import androidx.recyclerview.widget.ListUpdateCallback
 import androidx.recyclerview.widget.RecyclerView
 import java.lang.ref.WeakReference
-import java.lang.reflect.Type
-import java.lang.reflect.TypeVariable
-import kotlin.reflect.KClass
 
 /**
  * @description:
  * @author:  79120
  * @date :   2021/6/21 15:49
  */
-abstract class RecyclerAdapter<T : Any, VH : RecyclerView.ViewHolder>() :
-    RecyclerView.Adapter<VH>(), IViewCreatedFactory<VH> {
+abstract class RecyclerAdapter<T : Any>(private val layout: Int? = null) :
+    RecyclerView.Adapter<BaseViewHolder>() {
     private var weakInflater: WeakReference<LayoutInflater>? = null
     private val updateCallback by lazy { AdapterListUpdateCallback(this) }
     private var recycler: IRecyclerModel<T> = CollectionsModel(updateCallback)
@@ -29,7 +27,7 @@ abstract class RecyclerAdapter<T : Any, VH : RecyclerView.ViewHolder>() :
     private var statusAdapter: StatusAdapter? = null
 
     @State
-    private var state: Int? = null
+    private var state: Int = State.STATE_NORMAL
 
     fun setOnItemClickCallback(clickEvent: (T, Int) -> Unit) {
         itemClickCallback = clickEvent
@@ -48,22 +46,43 @@ abstract class RecyclerAdapter<T : Any, VH : RecyclerView.ViewHolder>() :
         this.recycler = block.invoke(updateCallback)
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
+    open fun onViewHolderCreated(
+        inflater: LayoutInflater,
+        parent: ViewGroup,
+        viewType: Int
+    ): BaseViewHolder {
+        return BaseViewHolder(inflater.inflate(layout!!, parent, false))
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BaseViewHolder {
         val inflater = weakInflater?.get() ?: LayoutInflater.from(parent.context)
-        if (state!=State.STATE_NORMAL){
-            val view=requireNotNull(statusAdapter).onCreateView(inflater,parent)
-            return BaseViewHolder(view)
-        }else{
-            return onViewCreated(inflater, parent, viewType).also { setItemClickEvent(it) }
+        return if (state != State.STATE_NORMAL) {
+            requireNotNull(statusAdapter).onCreateViewHolder(inflater, parent)
+        } else {
+            onViewHolderCreated(inflater, parent, viewType).also { setItemClickEvent(it) }
         }
     }
 
-    override fun getItemCount(): Int = recycler.itemCount
+    override fun onBindViewHolder(holder: BaseViewHolder, position: Int) {
+        if (state != State.STATE_NORMAL) {
+            requireNotNull(statusAdapter).onBindViewHolder(holder, state)
+        } else {
+            onBindViewHolder(holder, getItem(position), position)
+        }
+    }
+
+    abstract fun onBindViewHolder(holder: BaseViewHolder, data: T, position: Int)
+
+    override fun getItemCount(): Int = if (state != State.STATE_NORMAL) recycler.itemCount else 1
 
     fun getItem(index: Int): T = recycler.getItem(index)
 
     fun submitData(data: List<T>) {
-        recycler.submitData(data)
+        if (data.isEmpty()) {
+            setState(State.STATE_EMPTY)
+        } else {
+            recycler.submitData(data)
+        }
     }
 
     fun getCurrentList(): List<T> {
@@ -84,7 +103,7 @@ abstract class RecyclerAdapter<T : Any, VH : RecyclerView.ViewHolder>() :
         }
     }
 
-    private fun setItemClickEvent(helper: VH) {
+    private fun setItemClickEvent(helper: BaseViewHolder) {
         itemClickCallback?.let { block ->
             helper.itemView.setOnClickListener {
                 val position = helper.bindingAdapterPosition
@@ -104,7 +123,7 @@ abstract class RecyclerAdapter<T : Any, VH : RecyclerView.ViewHolder>() :
      * 设置点击事件
      * 最好在onCreateViewHolder()或onViewCreated()中设置
      */
-    fun setChildClickEvent(helper: VH, view: View) {
+    fun setChildClickEvent(helper: BaseViewHolder, view: View) {
         itemChildClickLists?.get(view.id)?.let { block ->
             view.setOnClickListener {
                 val position = helper.bindingAdapterPosition
@@ -113,8 +132,14 @@ abstract class RecyclerAdapter<T : Any, VH : RecyclerView.ViewHolder>() :
         }
     }
 
-    fun setEmptyAdapter(adapter: StatusAdapter) {
+    fun setStatusAdapter(adapter: StatusAdapter) {
         this.statusAdapter = adapter
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    fun setState(@State state: Int) {
+        this.state = state
+        notifyDataSetChanged()
     }
 
 }

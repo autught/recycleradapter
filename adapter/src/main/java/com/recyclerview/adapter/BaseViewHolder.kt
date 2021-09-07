@@ -1,8 +1,8 @@
 package com.recyclerview.adapter
 
-import android.util.SparseArray
 import android.view.View
 import androidx.annotation.IdRes
+import androidx.collection.SparseArrayCompat
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 
@@ -13,10 +13,14 @@ import androidx.viewbinding.ViewBinding
  */
 class BaseViewHolder(view: View) : RecyclerView.ViewHolder(view) {
 
+    constructor(vb: ViewBinding) : this(vb.root) {
+        itemView.setTag(-1, vb)
+    }
+
     /**
      * Views indexed with their IDs
      */
-    private var views: SparseArray<View?>? = null
+    private var views: SparseArrayCompat<View?>? = null
 
     @Suppress("UNCHECKED_CAST")
     fun <T : View> findViewById(@IdRes viewId: Int): T {
@@ -25,17 +29,13 @@ class BaseViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             view = itemView.findViewById<T>(viewId)
                 ?: throw NullPointerException("NullPointerException,can't find this id")
             if (views == null) {
-                views = SparseArray()
+                views = SparseArrayCompat()
             }
             views!!.put(viewId, view)
         }
         return view as T
     }
 
+    @Suppress("UNCHECKED_CAST")
+    fun <VB : ViewBinding> getBinding() = itemView.getTag(-1) as VB
 }
-
-/**
- * 如果使用viewBinding注意在RecyclerView.Adapter$onViewRecycled()中置空
- */
-class ViewBindingHolder<VB : ViewBinding>(val binding: VB) :
-    RecyclerView.ViewHolder(binding.root)

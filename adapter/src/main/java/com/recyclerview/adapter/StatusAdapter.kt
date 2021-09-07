@@ -1,7 +1,6 @@
 package com.recyclerview.adapter
 
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 
 /**
@@ -13,9 +12,9 @@ abstract class StatusAdapter {
     @State
     private var state: Int = State.STATE_NORMAL
 
-    abstract fun onCreateView(inflater: LayoutInflater, parent: ViewGroup): View
+    abstract fun onCreateViewHolder(inflater: LayoutInflater, parent: ViewGroup): BaseViewHolder
 
-    abstract fun onBind(@State state: Int)
+    abstract fun onBindViewHolder(helper: BaseViewHolder, @State state: Int)
 
     fun onViewRecycled() {}
 }
