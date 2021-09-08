@@ -73,7 +73,7 @@ abstract class RecyclerAdapter<T : Any>(private val layout: Int? = null) :
 
     abstract fun onBindViewHolder(holder: BaseViewHolder, data: T, position: Int)
 
-    override fun getItemCount(): Int = if (state != State.STATE_NORMAL) recycler.itemCount else 1
+    override fun getItemCount(): Int = if (state != State.STATE_NORMAL) 1 else recycler.itemCount
 
     fun getItem(index: Int): T = recycler.getItem(index)
 
@@ -81,6 +81,7 @@ abstract class RecyclerAdapter<T : Any>(private val layout: Int? = null) :
         if (data.isEmpty()) {
             setState(State.STATE_EMPTY)
         } else {
+            setState(State.STATE_NORMAL)
             recycler.submitData(data)
         }
     }
@@ -136,10 +137,15 @@ abstract class RecyclerAdapter<T : Any>(private val layout: Int? = null) :
         this.statusAdapter = adapter
     }
 
-    @SuppressLint("NotifyDataSetChanged")
     fun setState(@State state: Int) {
-        this.state = state
-        notifyDataSetChanged()
+        if (this.state!=State.STATE_NORMAL&&this.state!=state){
+            if (state!=State.STATE_NORMAL){
+                notifyItemChanged(0)
+            }else{
+                notifyItemRemoved(0)
+            }
+            this.state = state
+        }
     }
 
 }

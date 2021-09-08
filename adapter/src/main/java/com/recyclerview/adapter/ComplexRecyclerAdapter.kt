@@ -11,8 +11,8 @@ import java.lang.reflect.ParameterizedType
  * @author:  79120
  * @date :   2021/7/8 23:20
  */
-open class ComplexRecyclerAdapter(
-    vararg controllers: RecyclerAdapter<in Any>,
+open class ComplexRecyclerAdapter<in RA:RecyclerAdapter<in Any>>(
+    vararg controllers: RA,
     block: ((Any, Int) -> Int?)? = null
 ) : RecyclerAdapter<Any>() {
     private val models = SparseArrayCompat<RecyclerAdapter<Any>>()

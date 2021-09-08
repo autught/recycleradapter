@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import java.lang.ref.WeakReference
 
-abstract class CustomListAdapter<T>(
+abstract class CustomListAdapter<T> @JvmOverloads constructor(
     private val layout: Int? = null,
     callback: DiffUtil.ItemCallback<T>
 ) : ListAdapter<T, BaseViewHolder>(callback) {
@@ -65,6 +65,10 @@ abstract class CustomListAdapter<T>(
         }
     }
 
+    override fun getItemCount(): Int {
+        return if (state != State.STATE_NORMAL) 1 else super.getItemCount()
+    }
+
     private fun setItemClickEvent(helper: BaseViewHolder) {
         itemClickCallback?.let { block ->
             helper.itemView.setOnClickListener {
@@ -106,6 +110,7 @@ abstract class CustomListAdapter<T>(
         if (list.isNullOrEmpty()) {
             setState(State.STATE_EMPTY)
         } else {
+            state = State.STATE_NORMAL
             super.submitList(list)
         }
     }
@@ -114,6 +119,7 @@ abstract class CustomListAdapter<T>(
         if (list.isNullOrEmpty()) {
             setState(State.STATE_EMPTY)
         } else {
+            state = State.STATE_NORMAL
             super.submitList(list, commitCallback)
         }
     }
