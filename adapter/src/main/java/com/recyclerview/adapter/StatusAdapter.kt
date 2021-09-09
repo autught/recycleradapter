@@ -9,12 +9,9 @@ import android.view.ViewGroup
  * @date :   2021/8/24 17:18
  */
 abstract class StatusAdapter {
-    @State
-    private var state: Int = State.STATE_NORMAL
 
     abstract fun onCreateViewHolder(inflater: LayoutInflater, parent: ViewGroup): BaseViewHolder
 
-    abstract fun onBindViewHolder(helper: BaseViewHolder, @State state: Int)
+    abstract fun onBindViewHolder(helper: BaseViewHolder, state: State)
 
-    fun onViewRecycled() {}
 }

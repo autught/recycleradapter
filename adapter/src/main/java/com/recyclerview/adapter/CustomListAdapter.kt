@@ -12,17 +12,15 @@ import androidx.recyclerview.widget.RecyclerView
 import java.lang.ref.WeakReference
 
 abstract class CustomListAdapter<T> @JvmOverloads constructor(
+    callback: DiffUtil.ItemCallback<T>,
     private val layout: Int? = null,
-    callback: DiffUtil.ItemCallback<T>
 ) : ListAdapter<T, BaseViewHolder>(callback) {
     private var inflaterRef: WeakReference<LayoutInflater>? = null
     private var itemChildClickLists: SparseArrayCompat<(T, Int, Int) -> Unit>? = null
     private var itemClickCallback: ((T, Int) -> Unit)? = null
     private var itemLongClickCallback: ((T, Int) -> Unit)? = null
     private var statusAdapter: StatusAdapter? = null
-
-    @State
-    private var state: Int = State.STATE_NORMAL
+    private var state: State? = null
 
     fun setOnItemClickCallback(clickEvent: (T, Int) -> Unit) {
         itemClickCallback = clickEvent
@@ -37,36 +35,53 @@ abstract class CustomListAdapter<T> @JvmOverloads constructor(
         itemChildClickLists!!.put(viewId, clickEvent)
     }
 
-    fun onViewHolderCreated(
+    open fun onViewHolderCreated(
         inflater: LayoutInflater,
         parent: ViewGroup,
-    ): BaseViewHolder? {
-        return layout?.let { BaseViewHolder(inflater.inflate(layout, parent, false)) }
+    ): BaseViewHolder {
+        return BaseViewHolder(inflater.inflate(layout!!, parent, false))
     }
 
     abstract fun onBindViewHolder(holder: BaseViewHolder, data: T, position: Int)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BaseViewHolder {
         val inflater = inflaterRef?.get() ?: LayoutInflater.from(parent.context)
-        return if (state != State.STATE_NORMAL) {
-            requireNotNull(statusAdapter).onCreateViewHolder(inflater, parent)
+        return if (isNormal()) {
+            onViewHolderCreated(inflater, parent).also { setItemClickEvent(it) }
         } else {
-            onViewHolderCreated(inflater, parent)?.also {
-                setItemClickEvent(it)
-            } ?: throw IllegalArgumentException()
+            requireNotNull(statusAdapter).onCreateViewHolder(inflater, parent)
         }
     }
 
     override fun onBindViewHolder(holder: BaseViewHolder, position: Int) {
-        if (state != State.STATE_NORMAL) {
-            requireNotNull(statusAdapter).onBindViewHolder(holder, state)
-        } else {
+        if (isNormal()) {
             onBindViewHolder(holder, getItem(position), position)
+        } else {
+            requireNotNull(statusAdapter).onBindViewHolder(holder, state!!)
         }
     }
 
     override fun getItemCount(): Int {
-        return if (state != State.STATE_NORMAL) 1 else super.getItemCount()
+        return when {
+            isNormal() -> super.getItemCount()
+            state != null -> 1
+            else -> 0
+        }
+    }
+
+    private fun isNormal(): Boolean {
+        return state is State.Normal && !(state as State.Normal).isEmpty
+    }
+
+    fun setStatusAdapter(adapter: StatusAdapter) {
+        this.statusAdapter = adapter
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    fun setState(state: State) {
+        if (state.javaClass.hashCode() == this.state?.javaClass.hashCode()) return
+        this.state = state
+        notifyDataSetChanged()
     }
 
     private fun setItemClickEvent(helper: BaseViewHolder) {
@@ -107,30 +122,12 @@ abstract class CustomListAdapter<T> @JvmOverloads constructor(
     }
 
     override fun submitList(list: MutableList<T>?) {
-        if (list.isNullOrEmpty()) {
-            setState(State.STATE_EMPTY)
-        } else {
-            state = State.STATE_NORMAL
-            super.submitList(list)
-        }
+        setState(State.Normal(list.isNullOrEmpty()))
+        super.submitList(list)
     }
 
     override fun submitList(list: MutableList<T>?, commitCallback: Runnable?) {
-        if (list.isNullOrEmpty()) {
-            setState(State.STATE_EMPTY)
-        } else {
-            state = State.STATE_NORMAL
-            super.submitList(list, commitCallback)
-        }
-    }
-
-    fun setStatusAdapter(adapter: StatusAdapter) {
-        this.statusAdapter = adapter
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    fun setState(@State state: Int) {
-        this.state = state
-        notifyDataSetChanged()
+        setState(State.Normal(list.isNullOrEmpty()))
+        super.submitList(list, commitCallback)
     }
 }

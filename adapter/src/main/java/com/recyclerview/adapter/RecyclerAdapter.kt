@@ -25,25 +25,23 @@ abstract class RecyclerAdapter<T : Any>(private val layout: Int? = null) :
     private var itemClickCallback: ((T, Int) -> Unit)? = null
     private var itemLongClickCallback: ((T, Int) -> Unit)? = null
     private var statusAdapter: StatusAdapter? = null
+    private var state: State? = null
 
-    @State
-    private var state: Int = State.STATE_NORMAL
-
-    fun setOnItemClickCallback(clickEvent: (T, Int) -> Unit) {
-        itemClickCallback = clickEvent
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BaseViewHolder {
+        val inflater = weakInflater?.get() ?: LayoutInflater.from(parent.context)
+        return if (isNormal()) {
+            onViewHolderCreated(inflater, parent, viewType).also { setItemClickEvent(it) }
+        } else {
+            requireNotNull(statusAdapter).onCreateViewHolder(inflater, parent)
+        }
     }
 
-    fun setOnItemLongClickCallback(clickEvent: (T, Int) -> Unit) {
-        itemLongClickCallback = clickEvent
-    }
-
-    fun setOnItemChildClickCallback(@IdRes viewId: Int, clickEvent: (T, Int, Int) -> Unit) {
-        if (itemChildClickLists == null) itemChildClickLists = SparseArrayCompat()
-        itemChildClickLists!!.put(viewId, clickEvent)
-    }
-
-    fun <M : IRecyclerModel<T>> setRecyclerModel(block: ((ListUpdateCallback) -> M)) {
-        this.recycler = block.invoke(updateCallback)
+    override fun onBindViewHolder(holder: BaseViewHolder, position: Int) {
+        if (isNormal()) {
+            onBindViewHolder(holder, getItem(position), position)
+        } else {
+            requireNotNull(statusAdapter).onBindViewHolder(holder, state!!)
+        }
     }
 
     open fun onViewHolderCreated(
@@ -54,36 +52,21 @@ abstract class RecyclerAdapter<T : Any>(private val layout: Int? = null) :
         return BaseViewHolder(inflater.inflate(layout!!, parent, false))
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BaseViewHolder {
-        val inflater = weakInflater?.get() ?: LayoutInflater.from(parent.context)
-        return if (state != State.STATE_NORMAL) {
-            requireNotNull(statusAdapter).onCreateViewHolder(inflater, parent)
-        } else {
-            onViewHolderCreated(inflater, parent, viewType).also { setItemClickEvent(it) }
-        }
-    }
-
-    override fun onBindViewHolder(holder: BaseViewHolder, position: Int) {
-        if (state != State.STATE_NORMAL) {
-            requireNotNull(statusAdapter).onBindViewHolder(holder, state)
-        } else {
-            onBindViewHolder(holder, getItem(position), position)
-        }
-    }
-
     abstract fun onBindViewHolder(holder: BaseViewHolder, data: T, position: Int)
 
-    override fun getItemCount(): Int = if (state != State.STATE_NORMAL) 1 else recycler.itemCount
+    override fun getItemCount(): Int {
+        return when {
+            isNormal() -> recycler.itemCount
+            state != null -> 1
+            else -> 0
+        }
+    }
 
     fun getItem(index: Int): T = recycler.getItem(index)
 
-    fun submitData(data: List<T>) {
-        if (data.isEmpty()) {
-            setState(State.STATE_EMPTY)
-        } else {
-            setState(State.STATE_NORMAL)
-            recycler.submitData(data)
-        }
+    fun submitData(data: MutableList<T>) {
+        setState(State.Normal(data.isEmpty()))
+        recycler.submitData(data)
     }
 
     fun getCurrentList(): List<T> {
@@ -96,6 +79,21 @@ abstract class RecyclerAdapter<T : Any>(private val layout: Int? = null) :
 
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
         this.weakInflater = null
+    }
+
+    private fun isNormal(): Boolean {
+        return state is State.Normal && !(state as State.Normal).isEmpty
+    }
+
+    fun setStatusAdapter(adapter: StatusAdapter) {
+        this.statusAdapter = adapter
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    fun setState(state: State) {
+        if (state.javaClass.hashCode() == this.state?.javaClass.hashCode()) return
+        this.state = state
+        notifyDataSetChanged()
     }
 
     fun notifyDataModify(modify: CollectionModifiedModel<T>.() -> Unit) {
@@ -133,19 +131,21 @@ abstract class RecyclerAdapter<T : Any>(private val layout: Int? = null) :
         }
     }
 
-    fun setStatusAdapter(adapter: StatusAdapter) {
-        this.statusAdapter = adapter
+    fun setOnItemClickCallback(clickEvent: (T, Int) -> Unit) {
+        itemClickCallback = clickEvent
     }
 
-    fun setState(@State state: Int) {
-        if (this.state!=State.STATE_NORMAL&&this.state!=state){
-            if (state!=State.STATE_NORMAL){
-                notifyItemChanged(0)
-            }else{
-                notifyItemRemoved(0)
-            }
-            this.state = state
-        }
+    fun setOnItemLongClickCallback(clickEvent: (T, Int) -> Unit) {
+        itemLongClickCallback = clickEvent
+    }
+
+    fun setOnItemChildClickCallback(@IdRes viewId: Int, clickEvent: (T, Int, Int) -> Unit) {
+        if (itemChildClickLists == null) itemChildClickLists = SparseArrayCompat()
+        itemChildClickLists!!.put(viewId, clickEvent)
+    }
+
+    fun <M : IRecyclerModel<T>> setRecyclerModel(block: ((ListUpdateCallback) -> M)) {
+        this.recycler = block.invoke(updateCallback)
     }
 
 }

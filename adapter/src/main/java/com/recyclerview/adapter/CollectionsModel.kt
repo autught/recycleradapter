@@ -39,7 +39,7 @@ open class CollectionsModel<T : Any>(
     }
 
     override fun getItem(index: Int): T {
-        require(index in 0 until itemCount) {
+        require(index in 0..itemCount) {
             "index 传值超域"
         }
         return mData[index]
