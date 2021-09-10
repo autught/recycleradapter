@@ -59,7 +59,7 @@ publishing {
         release(MavenPublication) {
             groupId = "com.recyclerview"
             artifactId = "recycler-adapter"
-            version = "1.4.5"
+            version = "1.4.8"
             /**第一次先运行gradle build 生成arr文件后在运行gradle publish*/
             artifact("$buildDir/outputs/aar/adapter-release.aar")
         }

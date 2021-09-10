@@ -12,6 +12,6 @@ abstract class StatusAdapter {
 
     abstract fun onCreateViewHolder(inflater: LayoutInflater, parent: ViewGroup): BaseViewHolder
 
-    abstract fun onBindViewHolder(helper: BaseViewHolder, state: State)
+    abstract fun onBindViewHolder(helper: BaseViewHolder, @State state: Int)
 
 }

@@ -46,7 +46,7 @@ abstract class CustomListAdapter<T> @JvmOverloads constructor(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BaseViewHolder {
         val inflater = inflaterRef?.get() ?: LayoutInflater.from(parent.context)
-        return if (isNormal()) {
+        return if (noState()) {
             onViewHolderCreated(inflater, parent).also { setItemClickEvent(it) }
         } else {
             requireNotNull(statusAdapter).onCreateViewHolder(inflater, parent)
@@ -54,7 +54,7 @@ abstract class CustomListAdapter<T> @JvmOverloads constructor(
     }
 
     override fun onBindViewHolder(holder: BaseViewHolder, position: Int) {
-        if (isNormal()) {
+        if (noState()) {
             onBindViewHolder(holder, getItem(position), position)
         } else {
             requireNotNull(statusAdapter).onBindViewHolder(holder, state!!)
@@ -63,11 +63,13 @@ abstract class CustomListAdapter<T> @JvmOverloads constructor(
 
     override fun getItemCount(): Int {
         return when {
-            isNormal() -> super.getItemCount()
-            state != null -> 1
-            else -> 0
+            noState() -> super.getItemCount()
+            isNormal() -> 0
+            else -> 1
         }
     }
+
+    private fun noState() = state == null
 
     private fun isNormal(): Boolean {
         return state is State.Normal && !(state as State.Normal).isEmpty
@@ -82,6 +84,7 @@ abstract class CustomListAdapter<T> @JvmOverloads constructor(
         if (state.javaClass.hashCode() == this.state?.javaClass.hashCode()) return
         this.state = state
         notifyDataSetChanged()
+        if (isNormal()) this.state = null
     }
 
     private fun setItemClickEvent(helper: BaseViewHolder) {

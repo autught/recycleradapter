@@ -13,40 +13,44 @@ class CollectionModifiedModel<T : Any>(
 
     fun addItem(t: T) {
         val lastCount = itemCount
-        getCurrentList().toMutableList().add(t)
+        mData.add(t)
         updateCallback.onInserted(lastCount, 1)
     }
 
     fun addItems(ts: List<T>) {
         val lastCount = itemCount
-        getCurrentList().toMutableList().addAll(ts)
+        mData.addAll(ts)
         updateCallback.onInserted(lastCount, ts.count())
     }
 
     fun removeItem(t: T) {
-        val index = getCurrentList().toMutableList().indexOf(t)
-        if (getCurrentList().toMutableList().remove(t)) {
+        val index = mData.indexOf(t)
+        if (mData.remove(t)) {
             updateCallback.onRemoved(index, 1)
+            if (mData.isEmpty()){
+                originState=State.Normal(true)
+                updateCallback.onInserted(0, 1)
+            }
         }
     }
 
     fun setItem(index: Int, t: T) {
-        getCurrentList().toMutableList()[index] = t
+        mData[index] = t
         updateCallback.onChanged(index, 1, null)
     }
 
     fun modifyItem(index: Int, block: (T) -> Unit) {
-        block.invoke(getCurrentList().toMutableList()[index])
+        block.invoke(mData[index])
         updateCallback.onChanged(index, 1, null)
     }
 
     fun setItemPayloads(index: Int, t: T) {
-        getCurrentList().toMutableList()[index] = t
+        mData[index] = t
         updateCallback.onChanged(index, 1, 1)
     }
 
     fun modifyItemPayloads(index: Int, block: (T) -> Unit) {
-        block.invoke(getCurrentList().toMutableList()[index])
+        block.invoke(mData[index])
         updateCallback.onChanged(index, 1, 1)
     }
 }
