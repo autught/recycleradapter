@@ -27,10 +27,6 @@ class CollectionModifiedModel<T : Any>(
         val index = mData.indexOf(t)
         if (mData.remove(t)) {
             updateCallback.onRemoved(index, 1)
-            if (mData.isEmpty()){
-                originState=State.Normal(true)
-                updateCallback.onInserted(0, 1)
-            }
         }
     }
 

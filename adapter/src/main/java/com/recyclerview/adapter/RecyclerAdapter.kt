@@ -1,5 +1,6 @@
 package com.recyclerview.adapter
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -26,11 +27,11 @@ abstract class RecyclerAdapter<T : Any>(private val layout: Int? = null) :
     private var statusAdapter: StatusAdapter? = null
 
     @State
-    private var loadState: Int? = null
+    private var loadState: Int = State.STATE_NORMAL
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BaseViewHolder {
         val inflater = weakInflater?.get() ?: LayoutInflater.from(parent.context)
-        return if (loadState==State.STATE_NORMAL) {
+        return if (loadState == State.STATE_NORMAL) {
             onViewHolderCreated(inflater, parent, viewType).also { setItemClickEvent(it) }
         } else {
             requireNotNull(statusAdapter).onCreateViewHolder(inflater, parent)
@@ -38,10 +39,10 @@ abstract class RecyclerAdapter<T : Any>(private val layout: Int? = null) :
     }
 
     override fun onBindViewHolder(holder: BaseViewHolder, position: Int) {
-        if (loadState==State.STATE_NORMAL) {
+        if (loadState == State.STATE_NORMAL) {
             onBindViewHolder(holder, getItem(position), position)
         } else {
-            requireNotNull(statusAdapter).onBindViewHolder(holder, loadState!!)
+            requireNotNull(statusAdapter).onBindViewHolder(holder, loadState)
         }
     }
 
@@ -58,7 +59,6 @@ abstract class RecyclerAdapter<T : Any>(private val layout: Int? = null) :
     override fun getItemCount(): Int {
         return when (loadState) {
             State.STATE_NORMAL -> recycler.itemCount
-            null -> 0
             else -> 1
         }
     }
@@ -66,8 +66,11 @@ abstract class RecyclerAdapter<T : Any>(private val layout: Int? = null) :
     fun getItem(index: Int): T = recycler.getItem(index)
 
     fun submitData(data: List<T>) {
-        if (loadState)
+        setState(State.STATE_NORMAL)
         recycler.submitData(data)
+        if (data.isEmpty()) {
+            setState(State.STATE_EMPTY)
+        }
     }
 
     fun getCurrentList(): List<T> {
@@ -86,8 +89,19 @@ abstract class RecyclerAdapter<T : Any>(private val layout: Int? = null) :
         this.statusAdapter = adapter
     }
 
-    fun setState(state: State) {
-        recycler.submitState(state)
+    fun setState(@State state: Int) {
+        if (this.loadState == state) return
+        val temp=loadState
+        this.loadState = state
+        if (temp!=State.STATE_NORMAL){
+            if (state != State.STATE_NORMAL) {
+                notifyItemChanged(0)
+            } else {
+                notifyItemRemoved(0)
+            }
+        }else{
+            notifyItemInserted(0)
+        }
     }
 
     fun notifyDataModify(modify: CollectionModifiedModel<T>.() -> Unit) {

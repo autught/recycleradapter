@@ -12,11 +12,10 @@ interface IRecyclerModel<T> {
 
     fun submitData(data: List<T>)
 
-    fun submitState(state: State)
-
     fun getItem(@IntRange(from = 0) index: Int): T
 
     fun getCurrentList(): List<T>
 
-    fun getCurrentState(): State
+
+
 }

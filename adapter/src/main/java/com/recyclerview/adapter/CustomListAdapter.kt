@@ -1,6 +1,5 @@
 package com.recyclerview.adapter
 
-import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -20,7 +19,6 @@ abstract class CustomListAdapter<T> @JvmOverloads constructor(
     private var itemClickCallback: ((T, Int) -> Unit)? = null
     private var itemLongClickCallback: ((T, Int) -> Unit)? = null
     private var statusAdapter: StatusAdapter? = null
-    private var state: State? = null
 
     fun setOnItemClickCallback(clickEvent: (T, Int) -> Unit) {
         itemClickCallback = clickEvent
@@ -46,7 +44,7 @@ abstract class CustomListAdapter<T> @JvmOverloads constructor(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BaseViewHolder {
         val inflater = inflaterRef?.get() ?: LayoutInflater.from(parent.context)
-        return if (noState()) {
+        return   if (statusAdapter?.isAbnormal()==false) {
             onViewHolderCreated(inflater, parent).also { setItemClickEvent(it) }
         } else {
             requireNotNull(statusAdapter).onCreateViewHolder(inflater, parent)
@@ -54,37 +52,30 @@ abstract class CustomListAdapter<T> @JvmOverloads constructor(
     }
 
     override fun onBindViewHolder(holder: BaseViewHolder, position: Int) {
-        if (noState()) {
+        if (statusAdapter?.isAbnormal()==false) {
             onBindViewHolder(holder, getItem(position), position)
         } else {
-            requireNotNull(statusAdapter).onBindViewHolder(holder, state!!)
+            requireNotNull(statusAdapter).onBindViewHolder(holder)
         }
     }
 
     override fun getItemCount(): Int {
-        return when {
-            noState() -> super.getItemCount()
-            isNormal() -> 0
-            else -> 1
+        val count = super.getItemCount()
+        return if (count == 0 && statusAdapter != null) {
+            statusAdapter!!.getItemCount()
+        } else {
+            count
         }
-    }
-
-    private fun noState() = state == null
-
-    private fun isNormal(): Boolean {
-        return state is State.Normal && !(state as State.Normal).isEmpty
     }
 
     fun setStatusAdapter(adapter: StatusAdapter) {
         this.statusAdapter = adapter
     }
 
-    @SuppressLint("NotifyDataSetChanged")
-    fun setState(state: State) {
-        if (state.javaClass.hashCode() == this.state?.javaClass.hashCode()) return
-        this.state = state
-        notifyDataSetChanged()
-        if (isNormal()) this.state = null
+    fun setState( state: Int) {
+        if (statusAdapter?.setState(state)!=null) {
+            notifyDataSetChanged()
+        }
     }
 
     private fun setItemClickEvent(helper: BaseViewHolder) {
@@ -125,12 +116,19 @@ abstract class CustomListAdapter<T> @JvmOverloads constructor(
     }
 
     override fun submitList(list: MutableList<T>?) {
-        setState(State.Normal(list.isNullOrEmpty()))
+        if (loadState != State.STATE_NORMAL) {
+            notifyItemRemoved(0)
+        }
         super.submitList(list)
+        if (list.isNullOrEmpty()) {
+            setState(State.STATE_EMPTY)
+        }
     }
 
     override fun submitList(list: MutableList<T>?, commitCallback: Runnable?) {
-        setState(State.Normal(list.isNullOrEmpty()))
         super.submitList(list, commitCallback)
+        if (list.isNullOrEmpty()) {
+            setState()
+        }
     }
 }
