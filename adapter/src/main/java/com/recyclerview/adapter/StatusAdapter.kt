@@ -11,20 +11,13 @@ import android.view.ViewGroup
 abstract class StatusAdapter {
     private var loadState: Int = LOAD_NONE
 
-    fun setState(state: Int) {
-        if (this.loadState == state) return
-        val temp = loadState
+    fun setState(state: Int): Boolean {
+        if (this.loadState == state) return false
         this.loadState = state
-        if (temp != LOAD_NONE) {
-            if (state != LOAD_NONE) {
-//                notifyItemChanged(0)
-            } else {
-
-            }
-        } else {
-//            notifyItemInserted(0)
-        }
+        return true
     }
+
+    fun getState(): Int = loadState
 
     fun isAbnormal(): Boolean {
         return loadState == LOADING || loadState == LOAD_EMPTY || loadState == LOAD_ERROR
@@ -34,7 +27,7 @@ abstract class StatusAdapter {
 
     abstract fun onBindViewHolder(helper: BaseViewHolder)
 
-    fun getItemCount() = 0
+    fun getItemCount() = 1
 
     companion object {
         const val LOAD_NONE = 0

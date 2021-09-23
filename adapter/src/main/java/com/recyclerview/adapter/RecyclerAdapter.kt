@@ -26,12 +26,9 @@ abstract class RecyclerAdapter<T : Any>(private val layout: Int? = null) :
     private var itemLongClickCallback: ((T, Int) -> Unit)? = null
     private var statusAdapter: StatusAdapter? = null
 
-    @State
-    private var loadState: Int = State.STATE_NORMAL
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BaseViewHolder {
         val inflater = weakInflater?.get() ?: LayoutInflater.from(parent.context)
-        return if (loadState == State.STATE_NORMAL) {
+        return if (statusAdapter?.isAbnormal() == false) {
             onViewHolderCreated(inflater, parent, viewType).also { setItemClickEvent(it) }
         } else {
             requireNotNull(statusAdapter).onCreateViewHolder(inflater, parent)
@@ -39,10 +36,10 @@ abstract class RecyclerAdapter<T : Any>(private val layout: Int? = null) :
     }
 
     override fun onBindViewHolder(holder: BaseViewHolder, position: Int) {
-        if (loadState == State.STATE_NORMAL) {
+        if (statusAdapter?.isAbnormal() == false) {
             onBindViewHolder(holder, getItem(position), position)
         } else {
-            requireNotNull(statusAdapter).onBindViewHolder(holder, loadState)
+            requireNotNull(statusAdapter).onBindViewHolder(holder)
         }
     }
 
@@ -57,20 +54,20 @@ abstract class RecyclerAdapter<T : Any>(private val layout: Int? = null) :
     abstract fun onBindViewHolder(holder: BaseViewHolder, data: T, position: Int)
 
     override fun getItemCount(): Int {
-        return when (loadState) {
-            State.STATE_NORMAL -> recycler.itemCount
-            else -> 1
+        val count = recycler.itemCount
+        return if (count == 0 && statusAdapter != null) {
+            statusAdapter!!.getItemCount()
+        } else {
+            count
         }
     }
 
     fun getItem(index: Int): T = recycler.getItem(index)
 
     fun submitData(data: List<T>) {
-        setState(State.STATE_NORMAL)
+        if (data.isEmpty())
+            setState(StatusAdapter.LOAD_EMPTY)
         recycler.submitData(data)
-        if (data.isEmpty()) {
-            setState(State.STATE_EMPTY)
-        }
     }
 
     fun getCurrentList(): List<T> {
@@ -89,18 +86,10 @@ abstract class RecyclerAdapter<T : Any>(private val layout: Int? = null) :
         this.statusAdapter = adapter
     }
 
-    fun setState(@State state: Int) {
-        if (this.loadState == state) return
-        val temp=loadState
-        this.loadState = state
-        if (temp!=State.STATE_NORMAL){
-            if (state != State.STATE_NORMAL) {
-                notifyItemChanged(0)
-            } else {
-                notifyItemRemoved(0)
-            }
-        }else{
-            notifyItemInserted(0)
+    @SuppressLint("NotifyDataSetChanged")
+    fun setState(state: Int) {
+        if (statusAdapter?.setState(state) == true) {
+            notifyDataSetChanged()
         }
     }
 

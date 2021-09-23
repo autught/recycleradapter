@@ -1,5 +1,6 @@
 package com.recyclerview.adapter
 
+import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -44,7 +45,7 @@ abstract class CustomListAdapter<T> @JvmOverloads constructor(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BaseViewHolder {
         val inflater = inflaterRef?.get() ?: LayoutInflater.from(parent.context)
-        return   if (statusAdapter?.isAbnormal()==false) {
+        return if (statusAdapter?.isAbnormal() == false) {
             onViewHolderCreated(inflater, parent).also { setItemClickEvent(it) }
         } else {
             requireNotNull(statusAdapter).onCreateViewHolder(inflater, parent)
@@ -52,7 +53,7 @@ abstract class CustomListAdapter<T> @JvmOverloads constructor(
     }
 
     override fun onBindViewHolder(holder: BaseViewHolder, position: Int) {
-        if (statusAdapter?.isAbnormal()==false) {
+        if (statusAdapter?.isAbnormal() == false) {
             onBindViewHolder(holder, getItem(position), position)
         } else {
             requireNotNull(statusAdapter).onBindViewHolder(holder)
@@ -72,8 +73,9 @@ abstract class CustomListAdapter<T> @JvmOverloads constructor(
         this.statusAdapter = adapter
     }
 
-    fun setState( state: Int) {
-        if (statusAdapter?.setState(state)!=null) {
+    @SuppressLint("NotifyDataSetChanged")
+    fun setState(state: Int) {
+        if (statusAdapter?.setState(state) == true) {
             notifyDataSetChanged()
         }
     }
@@ -116,19 +118,14 @@ abstract class CustomListAdapter<T> @JvmOverloads constructor(
     }
 
     override fun submitList(list: MutableList<T>?) {
-        if (loadState != State.STATE_NORMAL) {
-            notifyItemRemoved(0)
-        }
+        if (list.isNullOrEmpty())
+            setState(StatusAdapter.LOAD_EMPTY)
         super.submitList(list)
-        if (list.isNullOrEmpty()) {
-            setState(State.STATE_EMPTY)
-        }
     }
 
     override fun submitList(list: MutableList<T>?, commitCallback: Runnable?) {
+        if (list.isNullOrEmpty())
+            setState(StatusAdapter.LOAD_EMPTY)
         super.submitList(list, commitCallback)
-        if (list.isNullOrEmpty()) {
-            setState()
-        }
     }
 }
