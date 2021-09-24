@@ -19,15 +19,15 @@ abstract class StatusAdapter {
 
     fun getState(): Int = loadState
 
-    fun isAbnormal(): Boolean {
-        return loadState == LOADING || loadState == LOAD_EMPTY || loadState == LOAD_ERROR
+    fun normal(): Boolean {
+        return loadState == LOAD_NONE
     }
 
     abstract fun onCreateViewHolder(inflater: LayoutInflater, parent: ViewGroup): BaseViewHolder
 
     abstract fun onBindViewHolder(helper: BaseViewHolder)
 
-    fun getItemCount() = 1
+    fun getItemCount() =  1
 
     companion object {
         const val LOAD_NONE = 0

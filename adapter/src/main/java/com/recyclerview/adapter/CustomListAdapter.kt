@@ -45,7 +45,7 @@ abstract class CustomListAdapter<T> @JvmOverloads constructor(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BaseViewHolder {
         val inflater = inflaterRef?.get() ?: LayoutInflater.from(parent.context)
-        return if (statusAdapter?.isAbnormal() == false) {
+        return  if (statusAdapter==null||statusAdapter!!.normal()) {
             onViewHolderCreated(inflater, parent).also { setItemClickEvent(it) }
         } else {
             requireNotNull(statusAdapter).onCreateViewHolder(inflater, parent)
@@ -53,16 +53,16 @@ abstract class CustomListAdapter<T> @JvmOverloads constructor(
     }
 
     override fun onBindViewHolder(holder: BaseViewHolder, position: Int) {
-        if (statusAdapter?.isAbnormal() == false) {
+        if (statusAdapter==null||statusAdapter!!.normal()) {
             onBindViewHolder(holder, getItem(position), position)
         } else {
-            requireNotNull(statusAdapter).onBindViewHolder(holder)
+           statusAdapter!!.onBindViewHolder(holder)
         }
     }
 
     override fun getItemCount(): Int {
         val count = super.getItemCount()
-        return if (count == 0 && statusAdapter != null) {
+        return if (count == 0 && statusAdapter?.normal()==false) {
             statusAdapter!!.getItemCount()
         } else {
             count
